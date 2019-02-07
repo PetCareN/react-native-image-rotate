@@ -220,7 +220,7 @@ public class ImageRotateModule extends ReactContextBaseJavaModule {
                 writeCompressedBitmapToFile(rotated, mimeType, tempFile);
 
                 if (mimeType.equals("image/jpeg")) {
-                    copyExif(mContext, Uri.parse(mUri), tempFile);
+                    copyExif(mContext, Uri.parse(mUri), tempFile, mAngle);
                 }
 
                 mSuccess.invoke(Uri.fromFile(tempFile).toString());
@@ -260,7 +260,7 @@ public class ImageRotateModule extends ReactContextBaseJavaModule {
 
     // Utils
 
-    private static void copyExif(Context context, Uri oldImage, File newFile) throws IOException {
+    private static void copyExif(Context context, Uri oldImage, File newFile, float angle) throws IOException {
         File oldFile = getFileFromUri(context, oldImage);
         if (oldFile == null) {
             FLog.w(ReactConstants.TAG, "Couldn't get real path for uri: " + oldImage);
@@ -272,6 +272,30 @@ public class ImageRotateModule extends ReactContextBaseJavaModule {
         for (String attribute : EXIF_ATTRIBUTES) {
             String value = oldExif.getAttribute(attribute);
             if (value != null) {
+                if (attribute.equals(ExifInterface.TAG_ORIENTATION)){
+                  // If we rotate the image we need to update the exif orientation to match
+                  float originalRotation;
+                  switch (value){
+                    case "1": originalRotation = 0f; break; // Horizontal (normal)
+                    case "3": originalRotation = 180.0f; break; // Rotate 180
+                    case "6": originalRotation = 90.0f; break; // Rotate 90 CW
+                    case "8": originalRotation = 270.0f; break; //Rotate 270 CW
+                    default:  originalRotation = 0f; FLog.w(ReactConstants.TAG, "Can't handle image with mirror orientation");
+                  }
+                  float newOrientation = originalRotation - angle;
+                  if (newOrientation < 0){
+                    newOrientation += 360.0f; // probably shouldn't happen
+                  }
+
+                  if (newOrientation == 0.0f) value = "1";
+                  else if (newOrientation == 180.0f) value = "3";
+                  else if (newOrientation == 90.0f) value = "6";
+                  else if (newOrientation == 270.0f) value = "8";
+                  else {
+                    value = null;
+                    FLog.w(ReactConstants.TAG, "Can't figure out a proper new exif orientation");
+                  }
+                }
                 newExif.setAttribute(attribute, value);
             }
         }
