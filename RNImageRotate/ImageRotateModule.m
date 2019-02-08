@@ -27,8 +27,8 @@ static CGFloat DegreesToRadians(CGFloat degrees) {
  * @param angle Rotation angle in degrees
  */
 RCT_EXPORT_METHOD(rotateImage:(NSURLRequest *)imageURL
-                  angle:(nonnull NSNumber *)angle,
-                  successCallback:(RCTResponseSenderBlock)successCallback,
+                  angle:(nonnull NSNumber *)angle
+                  successCallback:(RCTResponseSenderBlock)successCallback
                   errorCallback:(RCTResponseErrorBlock)errorCallback)
 {
 
